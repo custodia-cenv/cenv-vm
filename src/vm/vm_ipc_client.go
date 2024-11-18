@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"path/filepath"
+	"reflect"
 
 	"github.com/CustodiaJS/bngsocket"
 	cenvvm "github.com/custodia-cenv/cenv-vm/src"
@@ -19,7 +19,7 @@ func initCoreVmIpcClientSession(userGroups []*core.ACL) error {
 	// Es wird geprüft ob der Benutzer Systemrechte hat
 	if host.UserHasSystemPrivileges() {
 		// Es wird versucht für den Root User eine IPC Verbindung zu registrieren
-		rouvmErr := initRootUserVmIpcClientSession(string(cenvxcore.CoreVmIpcRootSocketPath))
+		rouvmErr := initRootUserVmIpcClientSession()
 		if rouvmErr == nil {
 			return nil
 		}
@@ -46,14 +46,9 @@ func initCoreVmIpcClientSession(userGroups []*core.ACL) error {
 }
 
 // initRootUserVmIpcClientSession erstellt eine RootUser basierte IPC Verbindung mit dem Core her
-func initRootUserVmIpcClientSession(basePath string) error {
-	// Check if basePath is empty
-	if basePath == "" {
-		return fmt.Errorf("%w: the provided basePath is empty", cenvvm.ErrEmptyBasePath)
-	}
-
+func initRootUserVmIpcClientSession() error {
 	// Der Altuelle Path wird erstellt
-	socketPath := filepath.Join(basePath, fmt.Sprintf("%s_root.sock", cenvvm.CORE_SOCKET_PREFIX))
+	socketPath := string(cenvxcore.CoreVmIpcRootSocketPath)
 
 	// Es wird geprüft ob die Datei vorhanden ist
 	if !filesystem.FileExists(socketPath) {
@@ -178,6 +173,13 @@ func upgradeSocketToBngSocketAndInitNewProcess(socket net.Conn) error {
 	if upgradeError != nil {
 		return upgradeError
 	}
+
+	// Der Prozess wird registriert
+	result, err := clientIpcVmSokcet.CallFunction("register", []interface{}{cenvvm.Version}, []reflect.Type{})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result...)
 
 	return nil
 }
