@@ -2,10 +2,12 @@ module github.com/custodia-cenv/cenv-vm
 
 go 1.23.1
 
-require github.com/CustodiaJS/bngsocket v0.0.0-20241114211535-eb190964ae90
+require (
+	github.com/custodia-cenv/bngsocket-go v0.0.0-20241123212228-e8cd05d4e71c
+	github.com/custodia-cenv/cenvx-core v0.0.0-20241123214000-4f5f0199f704
+)
 
 require (
-	github.com/custodia-cenv/cenvx-core v0.0.0-20241117210719-a40a007104cf // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect

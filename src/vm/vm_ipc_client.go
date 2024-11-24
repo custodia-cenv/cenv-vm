@@ -6,12 +6,13 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/CustodiaJS/bngsocket"
+	"github.com/custodia-cenv/bngsocket-go"
 	cenvvm "github.com/custodia-cenv/cenv-vm/src"
 	"github.com/custodia-cenv/cenv-vm/src/host"
 	"github.com/custodia-cenv/cenv-vm/src/host/filesystem"
 	cenvxcore "github.com/custodia-cenv/cenvx-core/src"
 	"github.com/custodia-cenv/cenvx-core/src/core"
+	"github.com/custodia-cenv/cenvx-core/src/log"
 )
 
 // initCoreVmIpcClientSession Initalisiert den VM-IPC Core Socket
@@ -19,6 +20,7 @@ func initCoreVmIpcClientSession(userGroups []*core.ACL) error {
 	// Es wird geprüft ob der Benutzer Systemrechte hat
 	if host.UserHasSystemPrivileges() {
 		// Es wird versucht für den Root User eine IPC Verbindung zu registrieren
+		log.DebugLogPrint("System Privileges: yes")
 		rouvmErr := initRootUserVmIpcClientSession()
 		if rouvmErr == nil {
 			return nil
@@ -30,6 +32,7 @@ func initCoreVmIpcClientSession(userGroups []*core.ACL) error {
 		for _, item := range userGroups {
 			usergr := initSpeficUserGroupVmIpcClientSession(*item.Groupname)
 			if usergr == nil {
+				log.DebugLogPrint("Member of: %s", *item.Groupname)
 				return nil
 			}
 		}
@@ -38,6 +41,7 @@ func initCoreVmIpcClientSession(userGroups []*core.ACL) error {
 	// Es wird versucht eine Current User Sitzung mit dem Core Service aufzubauen
 	currUserSessionErr := initCurrentUserVmIpcClientSession()
 	if currUserSessionErr == nil {
+		fmt.Println("Run as user instance")
 		return nil
 	}
 
@@ -168,18 +172,17 @@ func initCurrentUserVmIpcClientSession() error {
 // upgradeSocketToBngSocket wird verwenet um eine Socket Verbindung zu upgraden
 func upgradeSocketToBngSocketAndInitNewProcess(socket net.Conn) error {
 	// Die Verbindung wird geupgradet
-	var upgradeError error
-	clientIpcVmSokcet, upgradeError = bngsocket.UpgradeSocketToBngConn(socket)
+	clientIpcVmSokcet, upgradeError := bngsocket.UpgradeSocketToBngConn(socket)
 	if upgradeError != nil {
 		return upgradeError
 	}
 
 	// Der Prozess wird registriert
-	result, err := clientIpcVmSokcet.CallFunction("register", []interface{}{cenvvm.Version}, []reflect.Type{})
+	result, err := clientIpcVmSokcet.CallFunction("init", []interface{}{}, []reflect.Type{})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(result...)
+	_ = result
 
 	return nil
 }
