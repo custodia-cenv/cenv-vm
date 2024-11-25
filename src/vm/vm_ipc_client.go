@@ -184,5 +184,6 @@ func upgradeSocketToBngSocketAndInitNewProcess(socket net.Conn) error {
 	}
 	_ = result
 
+	// Es ist kein Fehler aufgetreten
 	return nil
 }
