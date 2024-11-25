@@ -5,3 +5,6 @@ type HostUserGroupName string
 
 // Gibt die Version der VM an
 type VmVersion uint64
+
+// GIbt den Status der VM an
+type VmState uint8
