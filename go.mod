@@ -1,6 +1,6 @@
 module github.com/custodia-cenv/cenv-vm
 
-go 1.23.1
+go 1.23
 
 require (
 	github.com/custodia-cenv/bngsocket-go v0.0.0-20241123212228-e8cd05d4e71c

@@ -6,7 +6,9 @@ import (
 	"os"
 	"runtime"
 
+	cenvvm "github.com/custodia-cenv/cenv-vm/src"
 	"github.com/custodia-cenv/cenv-vm/src/filesys"
+	"github.com/custodia-cenv/cenv-vm/src/host/filesystem"
 	"github.com/custodia-cenv/cenv-vm/src/img"
 	"github.com/custodia-cenv/cenv-vm/src/vm"
 	cenvxcore "github.com/custodia-cenv/cenvx-core/src"
@@ -14,7 +16,7 @@ import (
 )
 
 func main() {
-	// Maximale Anzahl von CPU-Kernen für die Go-Runtime festlegen
+	// Set maximum number of CPU cores for the Go runtime
 	runtime.GOMAXPROCS(1)
 
 	// Define flags
@@ -28,20 +30,28 @@ func main() {
 	if *image == "" {
 		fmt.Println("Error: -img is required.")
 		flag.Usage()
-		os.Exit(1) // Exit with a non-zero status to indicate an error
+		os.Exit(1)
 	}
 
-	// Es wird geprüft ob das WorkingDir vorhanden ist
-	var workingDirFilePath string
+	// It is checked whether the WorkingDir exists
+	var virtualFileSystemPath string
+	var virtualFileSystemMethode cenvvm.VFileSystemMethode
 	if *workingDir != "" {
-		// Es wird geprüft ob der Ordner exestiert
+		// Es wird geprüft ob es sich um einen Zulässigen Path handelt
+		if filesystem.HasUserAccess(*workingDir) {
 
+		}
+
+	} else {
+		fmt.Println("Error: -vfs is required.")
+		flag.Usage()
+		os.Exit(1)
 	}
 
-	// Der Willkomensbildschrim wird angezeigt
+	// The welcome screen is displayed
 	cmd.ShowBanner(cenvxcore.VMBanner)
 
-	// Es wird geprüft ob es sich um Unterstützes OS handelt
+	// It is checked whether it is a supported OS
 	cmd.OSSupportCheck()
 
 	// Der VM Prozess wird vorbereitet
@@ -69,7 +79,7 @@ func main() {
 	}
 
 	// Das Dateisystem wird vorbereitet
-	err = filesys.InitVMFileSystem()
+	err = filesys.InitVMFileSystem(virtualFileSystemPath, virtualFileSystemMethode)
 	if err != nil {
 		panic(err)
 	}
