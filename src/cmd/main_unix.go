@@ -6,90 +6,89 @@ import (
 	"os"
 	"runtime"
 
-	cenvvm "github.com/custodia-cenv/cenv-vm/src"
-	"github.com/custodia-cenv/cenv-vm/src/filesys"
 	"github.com/custodia-cenv/cenv-vm/src/host/filesystem"
-	"github.com/custodia-cenv/cenv-vm/src/img"
+	"github.com/custodia-cenv/cenv-vm/src/vfimg"
 	"github.com/custodia-cenv/cenv-vm/src/vm"
 	cenvxcore "github.com/custodia-cenv/cenvx-core/src"
 	"github.com/custodia-cenv/cenvx-core/src/cmd"
 )
 
 func main() {
-	// Set maximum number of CPU cores for the Go runtime
+	// Set the maximum number of CPU cores for the Go runtime
 	runtime.GOMAXPROCS(1)
-
-	// Define flags
-	image := flag.String("img", "", "Path to the image file (required)")
-	workingDir := flag.String("workingdir", "", "Path to the working directory")
 
 	// Parse the flags
 	flag.Parse()
 
-	// Check if the required flag is provided
+	// Check if the required -img flag is provided
 	if *image == "" {
 		fmt.Println("Error: -img is required.")
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	// It is checked whether the WorkingDir exists
-	var virtualFileSystemPath string
-	var virtualFileSystemMethode cenvvm.VFileSystemMethode
-	if *workingDir != "" {
-		// Es wird geprüft ob es sich um einen Zulässigen Path handelt
-		if filesystem.HasUserAccess(*workingDir) {
+	// Display the welcome screen
+	cmd.ShowBanner(cenvxcore.VMBanner)
 
-		}
+	// Check if the OS is supported
+	cmd.OSSupportCheck()
 
-	} else {
-		fmt.Println("Error: -vfs is required.")
-		flag.Usage()
+	// Prepare the working directory
+	err := vm.SetupWorkingDir()
+	if err != nil {
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
-	// The welcome screen is displayed
-	cmd.ShowBanner(cenvxcore.VMBanner)
+	// Output the parsed flags
+	fmt.Printf("Image: %s\n", *image)
 
-	// It is checked whether it is a supported OS
-	cmd.OSSupportCheck()
+	// Load the additional virtual file systems
+	for i, pair := range vfsFlags {
+		// Es wird geprüft ob die Datei vorhanden ist
+		if !filesystem.FileExists(pair.File) {
+			fmt.Printf("Error: virtual filesystem image %s not found\n", pair.File)
+			os.Exit(1)
+		}
 
-	// Der VM Prozess wird vorbereitet
-	err := vm.InitVmProcessInstance()
-	if err != nil {
-		panic(err)
+		fmt.Printf("VFS %d: Type=%s, File=%s\n", i+1, pair.Type, pair.File)
 	}
 
-	// Das VM Image wird geladen
-	err = img.LoadImgFile("test.img")
+	// Prepare the VM process
+	err = vm.InitVmProcessInstance()
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
-	// Das geladene Image wird im Core Registriert
+	// Load the VM image
+	err = vfimg.LoadImgFile(*image)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	// Register the loaded image in the core
 	err = vm.InitVmImgManifestWithCore()
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
-	// Der Prozess wird in Nebendiensten Registriert, bsp: Network Plattform
+	// Register the process in background services, e.g., Network Platform
 	err = vm.InitAntoherVmSystemServices()
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
-	// Das Dateisystem wird vorbereitet
-	err = filesys.InitVMFileSystem(virtualFileSystemPath, virtualFileSystemMethode)
-	if err != nil {
-		panic(err)
-	}
-
-	// Der VM Porzess wird gestartet und am leben gehalten
+	// Start the VM process and keep it alive
 	err = vm.StartVMAndKeepAlive()
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
 	// Bye
-	fmt.Println("By")
+	fmt.Println("Bye")
 }

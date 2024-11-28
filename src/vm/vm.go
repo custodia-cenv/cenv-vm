@@ -25,3 +25,8 @@ func InitVmImgManifestWithCore() error {
 func InitAntoherVmSystemServices() error {
 	return nil
 }
+
+// Registriert das Working dir
+func SetupWorkingDir() error {
+	return nil
+}
